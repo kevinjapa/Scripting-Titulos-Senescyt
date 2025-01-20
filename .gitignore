@@ -4,3 +4,7 @@ captcha_imagen.png
 post_imagen.png
 post_search_screenshot.png
 post_search.html
+*.png
+error_dom.html
+*.html
+*.csv

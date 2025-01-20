@@ -142,8 +142,8 @@
 
 
 
-#  version 2 para recopilacion implementado beutifulsoup
 
+#  version 2 para recopilacion implementado beutifulsoup
 
 from bs4 import BeautifulSoup
 import base64
@@ -186,19 +186,15 @@ def extraer_texto_captcha(imagen_path):
         raise ValueError("No se pudo extraer el texto del CAPTCHA.")
 
 def extraer_informacion(page):
-    """Extrae información relevante del DOM utilizando BeautifulSoup."""
     html_content = page.content()
     soup = BeautifulSoup(html_content, "html.parser")
 
-    # Extraer Identificación
     identificacion_label = soup.find("label", id="formPrincipal:j_idt45")
     identificacion = identificacion_label.text.strip() if identificacion_label else "No disponible"
 
-    # Extraer Nombres
     nombres_label = soup.find("label", id="formPrincipal:j_idt47")
     nombres = nombres_label.text.strip() if nombres_label else "No disponible"
 
-    # Extraer tabla de títulos
     titulos = []
     tabla = soup.find("tbody", id="formPrincipal:j_idt52:0:tablaAplicaciones_data")
     if tabla:
@@ -208,31 +204,48 @@ def extraer_informacion(page):
 
     return {"identificacion": identificacion, "nombres": nombres, "titulos": titulos}
 
-def guardar_informacion_csv(informacion, archivo="informacion.csv"):
-    """Guarda la información extraída en un archivo CSV."""
-    encabezados = ["Identificación", "Nombres", "Título", "Institución", "Tipo", "Número de Registro", "Fecha de Registro", "Área", "Observación"]
-    with open(archivo, mode="w", newline="", encoding="utf-8") as file:
+def guardar_informacion_csv(informacion, archivo="informacion_titulos.csv"):
+
+    encabezados = ["Identificación", "Nombres y Apellidos", "Título", "Institución", "Tipo", "Número de Registro", "Fecha de Registro", "Área", "Observación"]
+    archivo_existe = os.path.isfile(archivo)
+    with open(archivo, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow(encabezados)
-        for titulo in informacion["titulos"]:
-            writer.writerow([informacion["identificacion"], informacion["nombres"], *titulo])
+        if not archivo_existe:
+            writer.writerow(encabezados)
+        
+        for titulo_raw in informacion["titulos"]:
+
+            titulo = titulo_raw[0].replace("Título", "").strip()
+            institucion = titulo_raw[1].replace("Institución de Educación Superior", "").strip()
+            tipo = titulo_raw[2].replace("Tipo", "").strip()
+            numero_registro = titulo_raw[4].replace("Número de Registro", "").strip()
+            fecha_registro = titulo_raw[5].replace("Fecha de Registro", "").strip()
+            area = titulo_raw[6].replace("Área o Campo de Conocimiento", "").strip()
+            observacion = titulo_raw[7].replace("Observación", "").strip()
+
+            writer.writerow([
+                informacion["identificacion"],
+                informacion["nombres"],
+                titulo,
+                institucion,
+                tipo,
+                numero_registro,
+                fecha_registro,
+                area,
+                observacion
+            ])
 
 def llenar_identificacion(cedula):
-    """Llena el formulario de búsqueda en la página y extrae la información."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
 
-        # Navegar a la página
         page.goto("https://www.senescyt.gob.ec/consulta-titulos-web/faces/vista/consulta/consulta.xhtml")
 
-        # Esperar el formulario
         page.wait_for_selector('input#formPrincipal\\:identificacion')
 
-        # Rellenar identificación
         page.fill('input#formPrincipal\\:identificacion', cedula)
 
-        # Resolver CAPTCHA
         captcha_image_selector = 'img#formPrincipal\\:capimg'
         captcha_image_path = "captcha_image.png"
         page.locator(captcha_image_selector).screenshot(path=captcha_image_path)
@@ -260,6 +273,19 @@ def llenar_identificacion(cedula):
         finally:
             browser.close()
 
+def procesar_cedulas(csv_entrada):
+    
+    with open(csv_entrada, mode="r", encoding="utf-8") as file:
+        reader = csv.reader(file)
+        cedulas = [row[0] for row in reader]  # Suponiendo que cada fila contiene una cédula
+
+    for cedula in cedulas:
+        try:
+            print(f"Procesando cédula: {cedula}")
+            llenar_identificacion(cedula)
+        except Exception as e:
+            print(f"Error al procesar la cédula {cedula}: {e}")
+
 if __name__ == "__main__":
-    cedula = "0103053252" 
-    llenar_identificacion(cedula)
+    procesar_cedulas("Cedulas.csv")
+

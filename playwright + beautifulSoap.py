@@ -90,7 +90,7 @@ def guardar_informacion_csv(informacion, archivo="informacion_titulos.csv"):
 
 def llenar_identificacion(cedula):
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         page.goto("https://www.senescyt.gob.ec/consulta-titulos-web/faces/vista/consulta/consulta.xhtml")

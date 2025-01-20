@@ -8,3 +8,4 @@ post_search.html
 error_dom.html
 *.html
 *.csv
+.DS_Store

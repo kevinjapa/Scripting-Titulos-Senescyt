@@ -38,7 +38,7 @@ def extraer_texto_captcha(imagen_path):
     else:
         raise ValueError("No se pudo extraer el texto del CAPTCHA.")
 
-def extraer_informacion(page):
+def extraer_datos(page):
     html_content = page.content()
     soup = BeautifulSoup(html_content, "html.parser")
 
@@ -56,7 +56,6 @@ def extraer_informacion(page):
             titulos.append(celdas)
 
     return {"identificacion": identificacion, "nombres": nombres, "titulos": titulos}
-
 
 def guardar_informacion_csv(datos_texto, archivo="informacion_titulos.csv"):
     if not datos_texto.strip():
@@ -102,7 +101,6 @@ def guardar_informacion_csv(datos_texto, archivo="informacion_titulos.csv"):
     except Exception as e:
         print(f"Error al procesar y guardar datos en el CSV: {e}")
 
-
 def escribir_csv(encabezados, datos, archivo):
     try:
         archivo_existe = os.path.isfile(archivo)
@@ -115,8 +113,6 @@ def escribir_csv(encabezados, datos, archivo):
         print(f"Datos guardados correctamente en {archivo}.")
     except Exception as e:
         print(f"Error al escribir datos en el archivo CSV: {e}")
-
-
 
 def llenar_identificacion(cedula):
     with sync_playwright() as p:
@@ -149,7 +145,7 @@ def llenar_identificacion(cedula):
             page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
             page.screenshot(path="captura_datos.png")
 
-            datos= obtener_datos("captura_datos.png")
+            datos= extraer_dato("captura_datos.png")
             guardar_informacion_csv(datos)
 
             
@@ -172,7 +168,7 @@ def procesar_cedulas(csv_entrada):
         except Exception as e:
             print(f"Error al procesar la cédula {cedula}: {e}")
 
-def obtener_datos(imagen_path):
+def extraer_dato(imagen_path):
     base64_image = encode_image(imagen_path)
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -201,4 +197,4 @@ def obtener_datos(imagen_path):
 
 if __name__ == "__main__":
     # llenar_identificacion("NroCedula")
-    procesar_cedulas("Cedulas.csv")
+    procesar_cedulas("ced.txt")

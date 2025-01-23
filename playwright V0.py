@@ -41,32 +41,25 @@ def extraer_texto_captcha(imagen_path):
         raise ValueError("No se pudo extraer el texto del CAPTCHA.")
 
 def extraer_informacion(page):
+    """
+    Extrae la información de todas las tablas de resultados y devuelve los datos en formato de lista.
+    """
+    resultados = set()  # Utilizamos un conjunto para evitar duplicados
     try:
+        # Buscar todas las secciones de tablas de títulos
+        secciones_tablas = page.locator("div[id^='formPrincipal:j_idt56']").all()
 
-        identificacion = page.text_content('#formPrincipal\\:j_idt57')
-        nombres = page.text_content('#formPrincipal\\:j_idt59')
-        genero = page.text_content('#formPrincipal\\:j_idt62')
-        nacionalidad = page.text_content('#formPrincipal\\:j_idt64')
-
-
-        filas_titulos = page.locator('#formPrincipal\\:j_idt65\\:0\\:tablaAplicaciones_data > tr')
-        titulos = []
-        for fila in filas_titulos.all():
-            columnas = fila.locator('td').all_inner_texts()
-            titulos.append(columnas)
-
-        return {
-            "informacion_personal": {
-                "Identificación": identificacion.strip(),
-                "Nombres": nombres.strip(),
-                "Género": genero.strip(),
-                "Nacionalidad": nacionalidad.strip(),
-            },
-            "titulos_academicos": titulos,
-        }
+        for seccion in secciones_tablas:
+            # Localizar las filas dentro de cada tabla
+            filas = seccion.locator("tbody tr").all()
+            for fila in filas:
+                celdas = tuple(fila.locator("td").all_inner_texts())  # Convertimos en tupla para agregar al conjunto
+                resultados.add(celdas)
+        
+        print(f"Información extraída: {resultados}")
     except Exception as e:
         print(f"Error al extraer información: {e}")
-        return None
+    return list(resultados)  # Convertimos de nuevo a lista para procesar
 
 def llenar_identificacion(cedula):
     with sync_playwright() as p:
@@ -95,17 +88,17 @@ def llenar_identificacion(cedula):
         page.fill('input#formPrincipal\\:captchaSellerInput', texto_captcha)
         page.click('button#formPrincipal\\:boton-buscar')
 
-        try:
-            page.wait_for_selector('#formPrincipal\\:j_idt65\\:0\\:tablaAplicaciones', timeout=60000)
-        except Exception as e:
-            print("No se pudieron cargar los datos. Verifica el CAPTCHA.")
-            print(page.content())  
-            browser.close()
-            return
+        # try:
+        #     page.wait_for_selector('div[id^="formPrincipal:j_idt56"]', timeout=60000)
+        # except Exception as e:
+        #     print("No se pudieron cargar los datos. Verifica el CAPTCHA.")
+        #     print(page.content())  
+        #     browser.close()
+        #     return
 
         informacion = extraer_informacion(page)
 
-        if informacion is None:
+        if not informacion:
             print("No se pudo extraer información de la página.")
             browser.close()
             return
@@ -117,21 +110,13 @@ def llenar_identificacion(cedula):
             writer = csv.writer(file)
 
             if not archivo_existe:
-                writer.writerow(["Campo", "Valor"])
-
-            for key, value in informacion["informacion_personal"].items():
-                writer.writerow([key, value])
-
-            writer.writerow([])
-
-            if not archivo_existe:
                 writer.writerow(["Título", "Institución", "Tipo", "Reconocido Por", "Número de Registro", "Fecha de Registro", "Área", "Observación"])
 
-            for titulo in informacion["titulos_academicos"]:
+            for titulo in informacion:
                 writer.writerow(titulo)
 
         print("Información guardada en 'informacion_titulos.csv'.")
         browser.close()
 
 if __name__ == "__main__":
-    llenar_identificacion("Nro de cédula")
+    llenar_identificacion("0106306079")

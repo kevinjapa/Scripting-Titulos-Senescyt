@@ -66,18 +66,36 @@ Usa el siguiente comando para instalar todas las dependencias necesarias:
 
 ---
 
-## Uso
 
-### Ejecución del Script
+## Cómo Ejecutar el Programa
 
-1. Coloca el archivo de cédulas en la misma carpeta del script y asegúrate de que se llame `ced.txt`.
-2. Ejecuta el script desde la terminal o el entorno de desarrollo:
+### Pasos para la Ejecución
 
+1. **Configura las credenciales de OpenAI**:
+   - Asegúrate de tener una cuenta en OpenAI y genera una clave API.
+   - Configura la clave API como variable de entorno:
+     ```
+     export OPENAI_API_KEY="tu_clave_api"
+     ```
 
-3. El script:
-   - Resuelve el CAPTCHA automáticamente.
-   - Llena la información de cada cédula.
-   - Extrae datos de las tablas y las guarda en un archivo CSV llamado `informacion_titulos.csv`.
+2. **Prepara el archivo de entrada**:
+   - Crea un archivo llamado `ced.txt` en la misma carpeta del script. Cada línea del archivo debe contener una cédula de identidad. Ejemplo:
+     ```
+     0123456789
+     9876543210
+     1234567890
+     ```
+
+3. **Ejecuta el script**:
+   - Abre la terminal, navega a la carpeta donde se encuentra el script y escribe:
+     ```
+     python Recopilacion por Vision.py
+     ```
+
+4. **Resultados**:
+   - El programa procesará las cédulas del archivo `ced.txt`.
+   - Extraerá la información desde SENESCYT y guardará los datos en un archivo llamado `informacion_titulos.csv`.
+
 
 ---
 
